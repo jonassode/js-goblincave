@@ -10,11 +10,14 @@
 <body>
 
   <canvas width=480 height=480 onclick="x();"></canvas>
-  FPS: <span id="fps"></span>. Move with arrow keys.
+  FPS: <span id="fps"></span>.
   
   <div id="info">
     <h1>Space Base</h1>
-    Build the ultimate space base. :)
+    Imagine Dwarf Fortress meets Dungeon Keeper meets MS3TK meets Prison Architect. In Space. With lots of Robots.<br>
+    Add in all your favorite Sci-Fi B-Movie creatures. That's Space Base.<br>
+    <br>
+    Digging, Building and Lazering your way to fame and fortune, or at least survival.<br>
   </div>
   
   <h3>jaws log</h3>
@@ -64,7 +67,8 @@
 
 	for( row = 0; row < matrix.length; row++) {
 		for( col = 0; col < matrix[row].length; col++) {
-			if ( jaws.tile_map.at(col*cell_size,row*cell_size).length > 0 ){
+			var cells = jaws.tile_map.at(col*cell_size,row*cell_size);
+			if ( cells.length > 0 && cells[0].options.blocking == true){
 				matrix[row][col] = 0;
 			} else {
 				matrix[row][col] = 1;
@@ -84,27 +88,20 @@
         fps = document.getElementById("fps")
         blocks = new jaws.SpriteList()
         
-        /* We create some 32x32 blocks and save them in array blocks */
-//        blocks.push( new Sprite({image: "block.png", x: 0, y: 0, blocking:true}) )
-//        blocks.push( new Sprite({image: "block.png", x: 64, y: 64, blocking:true}) )
-//        blocks.push( new Sprite({image: "block.png", x: 128, y: 64, blocking:true}) )
-//        blocks.push( new Sprite({image: "block.png", x: 128, y: 128, blocking:true}) )
-
 	var tilemap_width = 15;
 	var tilemap_height = 15;
 
 	// Get some Random terrain
 	for ( var j = 0; j < tilemap_height; j++){
 		for ( var i = 0; i <tilemap_width; i++){
-			if ( Math.floor((Math.random()*10)+1) > 8 ){
-				var x = j*32;
-				var y = i*32;
-				if ( x != 0 && y != 128 ){
-				        blocks.push( new Sprite({image: "block.png", x: x, y: y, blocking: true }) )
-				}
-			}
+			var x = j*32;
+			var y = i*32;
 
-			//blocks.push( new Sprite({image: "dirt.png", x: i*32, y: 160+(j*32)}) )
+			if ( Math.floor((Math.random()*10)+1) > 8 && x != 0 ){
+			        blocks.push( new Sprite({image: "block.png", x: x, y: y, blocking: true }) )
+			} else {
+				blocks.push( new Sprite({image: "dirt.png", x: x, y: y, blocking: false}) )
+			}
 		}
 	}
 
@@ -121,11 +118,11 @@
           // Have our tile map return the items that occupy the cells which are touched by player.rect
           // If there's any items inside player.rect, reverse the movement (-> stand still)
           this.x += x
-          if(tile_map.atRect(player.rect()).length > 0) { this.x -= x }
+          //if(tile_map.atRect(player.rect()).length > 0) { this.x -= x }
 
           // Same as above but for vertical movement
           this.y += y
-          if(tile_map.atRect(player.rect()).length > 0) { this.y -= y }
+          //if(tile_map.atRect(player.rect()).length > 0) { this.y -= y }
 
 	  //jaws.log("Player: " + player.rect().toString())
         }
@@ -147,11 +144,6 @@
 
       /* update() will get called each game tick with your specified FPS. Put game logic here. */
       this.update = function() {
-        player.setImage( player.anim_default.next() )
-        if(jaws.pressed("left"))  { player.move(-2,0);  player.setImage(player.anim_left.next()) }
-        if(jaws.pressed("right")) { player.move(2,0);   player.setImage(player.anim_right.next()) }
-        if(jaws.pressed("up"))    { player.move(0, -2); player.setImage(player.anim_up.next()) }
-        if(jaws.pressed("down"))  { player.move(0, 2);  player.setImage(player.anim_down.next()) }
 
 	if ( player.path != undefined ){
 		var next_cell = jspath.shortest_path[player.path_index];
@@ -178,6 +170,8 @@
 				player.path = undefined;
 			}
 		}
+	} else {
+	        player.setImage( player.anim_default.next() )
 	}
 
 
