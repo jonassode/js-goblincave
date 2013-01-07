@@ -1,25 +1,79 @@
 <!DOCTYPE html> 
 <html>
   <head>
+    <script src='http://meeples.se/javascript/jspath-001.js' ></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script src="jaws.js"></script>
     <link type="text/css" rel="stylesheet" href="style.css" />
-    <title>Goblin Cave</title>
+    <title>Space Base</title>
   </head>
 <body>
 
-  <canvas width=500 height=320></canvas>
+  <canvas width=480 height=480 onclick="x();"></canvas>
   FPS: <span id="fps"></span>. Move with arrow keys.
   
   <div id="info">
-    <h1>Goblin Cave</h1>
-    The Goblins have lost their homeland after a horrible attack by the humans. Of your tribe, Shardik, only a few goblins remain.<br>
-Can you guide them and build them a new cave to call home. A cave worthy of the Crimson King?
+    <h1>Space Base</h1>
+    Build the ultimate space base. :)
   </div>
   
   <h3>jaws log</h3>
   <div id="jaws-log"></div>
  
   <script>
+    function x(){
+	var text = "- "
+	text += " Mouse x: " + jaws.mouse_x;
+	text += " Mouse y: " + jaws.mouse_y;
+	text += " Tile x: " + getTileNoFromCord(jaws.mouse_x);
+	text += " Tile y: " + getTileNoFromCord(jaws.mouse_y);
+	text += " Player x: " + getTileNoFromCord(jaws.player.rect().x);
+	text += " Player y: " + getTileNoFromCord(jaws.player.rect().y);
+
+	var matrix = exportTileMapToPathMatrix();
+	var start = {col: getTileNoFromCord(jaws.player.rect().x), row: getTileNoFromCord(jaws.player.rect().y) }
+	var goal = {col: getTileNoFromCord(jaws.mouse_x), row: getTileNoFromCord(jaws.mouse_y) }
+
+	matrix[start.row][start.col] = 1;
+
+	jspath.clear_shortest_path();
+	jspath.find_path(matrix, start, goal);
+	if ( jspath.shortest_path.length > 0 ){
+		var next_cell = jspath.shortest_path[jspath.shortest_path.length-2];
+		text += " Next cell " + next_cell.row + ", " + next_cell.col
+		text += " Index: " + (jspath.shortest_path.length-2)
+		jaws.player.path_index = jspath.shortest_path.length-2;
+		jaws.player.path = jspath.shortest_path;
+	} else {
+		text += " Could not find a path"
+	}
+
+
+        jaws.log(text)
+    }
+
+    function getTileNoFromCord(cord){
+	return Math.floor(cord / jaws.tile_map.cell_size[0]);
+    }
+
+    function exportTileMapToPathMatrix(){
+	var cols = jaws.tile_map.size[0]
+	var rows = jaws.tile_map.size[1]
+	var matrix = jspath.create_matrix(rows,cols);
+	var cell_size = jaws.tile_map.cell_size[0];
+
+	for( row = 0; row < matrix.length; row++) {
+		for( col = 0; col < matrix[row].length; col++) {
+			if ( jaws.tile_map.at(col*cell_size,row*cell_size).length > 0 ){
+				matrix[row][col] = 0;
+			} else {
+				matrix[row][col] = 1;
+			}
+		}
+	}
+	return matrix;
+    }
+
     function Example() {
       var player
       var blocks
@@ -31,30 +85,39 @@ Can you guide them and build them a new cave to call home. A cave worthy of the 
         blocks = new jaws.SpriteList()
         
         /* We create some 32x32 blocks and save them in array blocks */
-        blocks.push( new Sprite({image: "block.png", x: 0, y: 0}) )
-        blocks.push( new Sprite({image: "block.png", x: 64, y: 64}) )
-        blocks.push( new Sprite({image: "block.png", x: 128, y: 64}) )
-        blocks.push( new Sprite({image: "block.png", x: 128, y: 128}) )
+//        blocks.push( new Sprite({image: "block.png", x: 0, y: 0, blocking:true}) )
+//        blocks.push( new Sprite({image: "block.png", x: 64, y: 64, blocking:true}) )
+//        blocks.push( new Sprite({image: "block.png", x: 128, y: 64, blocking:true}) )
+//        blocks.push( new Sprite({image: "block.png", x: 128, y: 128, blocking:true}) )
 
 	var tilemap_width = 15;
+	var tilemap_height = 15;
 
-	for ( var j = 0; j < 5; j++){
+	// Get some Random terrain
+	for ( var j = 0; j < tilemap_height; j++){
 		for ( var i = 0; i <tilemap_width; i++){
-			blocks.push( new Sprite({image: "dirt.png", x: i*32, y: 160+(j*32)}) )
+			if ( Math.floor((Math.random()*10)+1) > 8 ){
+				var x = j*32;
+				var y = i*32;
+				if ( x != 0 && y != 128 ){
+				        blocks.push( new Sprite({image: "block.png", x: x, y: y, blocking: true }) )
+				}
+			}
+
+			//blocks.push( new Sprite({image: "dirt.png", x: i*32, y: 160+(j*32)}) )
 		}
 	}
 
         // A tilemap, each cell is 32x32 pixels. There's 10 such cells across and 10 downwards.
-        var tile_map = new jaws.TileMap({size: [tilemap_width,10], cell_size: [32,32]})
+        var tile_map = new jaws.TileMap({size: [tilemap_width,tilemap_height], cell_size: [32,32]})
 
         // Fit all items in array blocks into correct cells in the tilemap
         // Later on we can look them up really fast (see player.move)
         tile_map.push(blocks)
 
-        player = new jaws.Sprite({x:0, y:128, scale: 2, anchor: "center"})
+        player = new jaws.Sprite({x:0, y:128, scale: 2})
         player.move = function(x, y) {
-          jaws.log("Player: " + player.rect().toString())
-          
+         
           // Have our tile map return the items that occupy the cells which are touched by player.rect
           // If there's any items inside player.rect, reverse the movement (-> stand still)
           this.x += x
@@ -63,6 +126,8 @@ Can you guide them and build them a new cave to call home. A cave worthy of the 
           // Same as above but for vertical movement
           this.y += y
           if(tile_map.atRect(player.rect()).length > 0) { this.y -= y }
+
+	  //jaws.log("Player: " + player.rect().toString())
         }
 
         var anim = new jaws.Animation({sprite_sheet: "droid_11x15.png", frame_size: [11,15], frame_duration: 100})
@@ -75,6 +140,9 @@ Can you guide them and build them a new cave to call home. A cave worthy of the 
         player.setImage( player.anim_default.next() )
         jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
         jaws.preventDefaultKeys(["up", "down", "left", "right", "space"])
+
+        jaws.tile_map = tile_map;
+	jaws.player = player;
       }
 
       /* update() will get called each game tick with your specified FPS. Put game logic here. */
@@ -84,6 +152,34 @@ Can you guide them and build them a new cave to call home. A cave worthy of the 
         if(jaws.pressed("right")) { player.move(2,0);   player.setImage(player.anim_right.next()) }
         if(jaws.pressed("up"))    { player.move(0, -2); player.setImage(player.anim_up.next()) }
         if(jaws.pressed("down"))  { player.move(0, 2);  player.setImage(player.anim_down.next()) }
+
+	if ( player.path != undefined ){
+		var next_cell = jspath.shortest_path[player.path_index];
+		var x = player.rect().x;
+		var y = player.rect().y;
+		var next_x = next_cell.col *32
+		var next_y = next_cell.row *32
+
+		var direction;
+
+		if ( next_x > x ) { direction = "right" }
+		if ( next_x < x ) { direction = "left" }
+		if ( next_y < y ) { direction = "up" }
+		if ( next_y > y ) { direction = "down" }
+
+	        if(direction === "left"  ) { player.move(-1,0);  player.setImage(player.anim_left.next()) }
+	        if(direction === "right" ) { player.move(1,0);   player.setImage(player.anim_right.next()) }
+	        if(direction === "up"    ) { player.move(0, -1); player.setImage(player.anim_up.next()) }
+	        if(direction === "down"  ) { player.move(0, 1);  player.setImage(player.anim_down.next()) }
+
+		if ( next_x === x && next_y === y ){
+			player.path_index--;
+			if ( player.path_index < 0 ){
+				player.path = undefined;
+			}
+		}
+	}
+
 
         jaws.forceInsideCanvas(player)
         fps.innerHTML = jaws.game_loop.fps + ". player: " + player.x + "/" + player.y
@@ -96,8 +192,8 @@ Can you guide them and build them a new cave to call home. A cave worthy of the 
         player.draw()
 
         // uncomment to show bounding box rects
-        // blocks.forEach( function(item, total) { item.rect.draw() })
-        // player.rect.draw()
+        //blocks.forEach( function(item, total) { item.rect.draw() })
+        //player.rect.draw()
       }
     }
     
