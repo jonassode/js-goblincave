@@ -1,4 +1,4 @@
-spacelab.robot = function(x, y){
+spacebase.robot = function(x, y){
 
 	var object = {};
 

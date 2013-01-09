@@ -4,8 +4,8 @@
     <script src='http://meeples.se/javascript/jspath-003.js' ></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script src="jaws.js"></script>
-    <script src="spacelab.js"></script>
-    <script src="spacelabrobots.js"></script>
+    <script src="spacebase.js"></script>
+    <script src="spacebaserobots.js"></script>
 
     <link type="text/css" rel="stylesheet" href="style.css" />
     <title>Space Base</title>
@@ -105,9 +105,9 @@
       var blocks
       var fps
       var workers = new jaws.SpriteList()
-      workers.push(spacelab.robot(0,0))
-      workers.push(spacelab.robot(0,64))
-      workers.push(spacelab.robot(0,128))
+      workers.push(spacebase.robot(0,0))
+      workers.push(spacebase.robot(0,64))
+      workers.push(spacebase.robot(0,128))
 
       /* Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
@@ -147,7 +147,7 @@
 
 
 	// For Debugging
-	jaws.on_keydown("r", function(){jaws.workers.push(new spacelab.robot(0,0))})
+	jaws.on_keydown("r", function(){jaws.workers.push(new spacebase.robot(0,0))})
       }
 
       /* update() will get called each game tick with your specified FPS. Put game logic here. */
