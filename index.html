@@ -1,9 +1,12 @@
 <!DOCTYPE html> 
 <html>
   <head>
-    <script src='http://meeples.se/javascript/jspath-002.js' ></script>
+    <script src='http://meeples.se/javascript/jspath-003.js' ></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script src="jaws.js"></script>
+    <script src="spacelab.js"></script>
+    <script src="spacelabrobots.js"></script>
+
     <link type="text/css" rel="stylesheet" href="style.css" />
     <title>Space Base</title>
   </head>
@@ -24,35 +27,55 @@
   <div id="jaws-log"></div>
  
   <script>
+    function getAvailableWorker(){
+	var workers = jaws.workers;
+	var availableWorker;
+
+	workers.forEach(
+		function(worker){
+			if(worker.occupied == false){
+				availableWorker = worker;
+			};
+		}
+	);
+
+	return availableWorker;
+    }
+
     function x(){
-	var text = "- "
-	text += " Mouse x: " + jaws.mouse_x;
-	text += " Mouse y: " + jaws.mouse_y;
-	text += " Tile x: " + getTileNoFromCord(jaws.mouse_x);
-	text += " Tile y: " + getTileNoFromCord(jaws.mouse_y);
-	text += " Player x: " + getTileNoFromCord(jaws.player.rect().x);
-	text += " Player y: " + getTileNoFromCord(jaws.player.rect().y);
 
-	var matrix = exportTileMapToPathMatrix();
-	var start = {col: getTileNoFromCord(jaws.player.rect().x), row: getTileNoFromCord(jaws.player.rect().y) }
-	var goal = {col: getTileNoFromCord(jaws.mouse_x), row: getTileNoFromCord(jaws.mouse_y) }
+	var worker = getAvailableWorker();
 
-	matrix[start.row][start.col] = 1;
+	if ( worker !== undefined ) {
+		var text = "- "
+		text += " Mouse x: " + jaws.mouse_x;
+		text += " Mouse y: " + jaws.mouse_y;
+		text += " Tile x: " + getTileNoFromCord(jaws.mouse_x);
+		text += " Tile y: " + getTileNoFromCord(jaws.mouse_y);
+		text += " Player x: " + getTileNoFromCord(worker.rect().x);
+		text += " Player y: " + getTileNoFromCord(worker.rect().y);
 
-	jspath.clear_shortest_path();
-	jspath.find_path(matrix, start, goal);
-	if ( jspath.shortest_path.length > 0 ){
-		var next_cell = jspath.shortest_path[jspath.shortest_path.length-2];
-		text += " Next cell " + next_cell.row + ", " + next_cell.col
-		text += " Index: " + (jspath.shortest_path.length-2)
-		jaws.player.path_index = jspath.shortest_path.length-2;
-		jaws.player.path = jspath.shortest_path;
+		var matrix = exportTileMapToPathMatrix();
+		var start = {col: getTileNoFromCord(worker.rect().x), row: getTileNoFromCord(worker.rect().y) }
+		var goal = {col: getTileNoFromCord(jaws.mouse_x), row: getTileNoFromCord(jaws.mouse_y) }
+
+		matrix[start.row][start.col] = 1;
+
+		var shortest_path = jspath.find_path(matrix, start, goal);
+		if ( shortest_path.length > 0 ){
+			var next_cell = shortest_path[shortest_path.length-2];
+			text += " Next cell " + next_cell.row + ", " + next_cell.col
+			text += " Index: " + (shortest_path.length-2)
+			worker.path_index = shortest_path.length-2;
+			worker.path = shortest_path;
+			worker.occupied = true;
+		} else {
+			text += " Could not find a path"
+		}
+		jaws.log(text)
 	} else {
-		text += " Could not find a path"
+	        jaws.log("I am sorry, but all Workers are busy.")
 	}
-
-
-        jaws.log(text)
     }
 
     function getTileNoFromCord(cord){
@@ -79,9 +102,12 @@
     }
 
     function Example() {
-      var player
       var blocks
       var fps
+      var workers = new jaws.SpriteList()
+      workers.push(spacelab.robot(0,0))
+      workers.push(spacelab.robot(0,64))
+      workers.push(spacelab.robot(0,128))
 
       /* Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
@@ -112,78 +138,62 @@
         // Later on we can look them up really fast (see player.move)
         tile_map.push(blocks)
 
-        player = new jaws.Sprite({x:0, y:128, scale: 2})
-        player.move = function(x, y) {
-         
-          // Have our tile map return the items that occupy the cells which are touched by player.rect
-          // If there's any items inside player.rect, reverse the movement (-> stand still)
-          this.x += x
-          //if(tile_map.atRect(player.rect()).length > 0) { this.x -= x }
 
-          // Same as above but for vertical movement
-          this.y += y
-          //if(tile_map.atRect(player.rect()).length > 0) { this.y -= y }
-
-	  //jaws.log("Player: " + player.rect().toString())
-        }
-
-        var anim = new jaws.Animation({sprite_sheet: "droid_11x15.png", frame_size: [11,15], frame_duration: 100})
-        player.anim_default = anim.slice(0,5)
-        player.anim_up = anim.slice(6,8)
-        player.anim_down = anim.slice(8,10)
-        player.anim_left = anim.slice(10,12)
-        player.anim_right = anim.slice(12,14)
-
-        player.setImage( player.anim_default.next() )
         jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
         jaws.preventDefaultKeys(["up", "down", "left", "right", "space"])
 
         jaws.tile_map = tile_map;
-	jaws.player = player;
+	jaws.workers = workers;
+
+
+	// For Debugging
+	jaws.on_keydown("r", function(){jaws.workers.push(new spacelab.robot(0,0))})
       }
 
       /* update() will get called each game tick with your specified FPS. Put game logic here. */
       this.update = function() {
 
-	if ( player.path != undefined ){
-		var next_cell = jspath.shortest_path[player.path_index];
-		var x = player.rect().x;
-		var y = player.rect().y;
-		var next_x = next_cell.col *32
-		var next_y = next_cell.row *32
+	jaws.workers.forEach(function(worker){
+		if ( worker.path != undefined ){
+			var next_cell = worker.path[worker.path_index];
+			var x = worker.rect().x;
+			var y = worker.rect().y;
+			var next_x = next_cell.col *32
+			var next_y = next_cell.row *32
 
-		var direction;
+			var direction;
 
-		if ( next_x > x ) { direction = "right" }
-		if ( next_x < x ) { direction = "left" }
-		if ( next_y < y ) { direction = "up" }
-		if ( next_y > y ) { direction = "down" }
+			if ( next_x > x ) { direction = "right" }
+			if ( next_x < x ) { direction = "left" }
+			if ( next_y < y ) { direction = "up" }
+			if ( next_y > y ) { direction = "down" }
 
-	        if(direction === "left"  ) { player.move(-1,0);  player.setImage(player.anim_left.next()) }
-	        if(direction === "right" ) { player.move(1,0);   player.setImage(player.anim_right.next()) }
-	        if(direction === "up"    ) { player.move(0, -1); player.setImage(player.anim_up.next()) }
-	        if(direction === "down"  ) { player.move(0, 1);  player.setImage(player.anim_down.next()) }
+			if(direction === "left"  ) { worker.move(-1,0);  worker.setImage(worker.anim_left.next()) }
+			if(direction === "right" ) { worker.move(1,0);   worker.setImage(worker.anim_right.next()) }
+			if(direction === "up"    ) { worker.move(0, -1); worker.setImage(worker.anim_up.next()) }
+			if(direction === "down"  ) { worker.move(0, 1);  worker.setImage(worker.anim_down.next()) }
 
-		if ( next_x === x && next_y === y ){
-			player.path_index--;
-			if ( player.path_index < 0 ){
-				player.path = undefined;
+			if ( next_x === x && next_y === y ){
+				worker.path_index--;
+				if ( worker.path_index < 0 ){
+					worker.path = undefined;
+					worker.occupied = false;
+				}
 			}
+		} else {
+			worker.setImage( worker.anim_default.next() )
 		}
-	} else {
-	        player.setImage( player.anim_default.next() )
-	}
+	});
 
-
-        jaws.forceInsideCanvas(player)
-        fps.innerHTML = jaws.game_loop.fps + ". player: " + player.x + "/" + player.y
+        //jaws.forceInsideCanvas(player)
+        fps.innerHTML = jaws.game_loop.fps
       }
 
       /* Directly after each update draw() will be called. Put all your on-screen operations here. */
       this.draw = function() {
         jaws.clear()
         blocks.draw()
-        player.draw()
+        workers.draw()
 
         // uncomment to show bounding box rects
         //blocks.forEach( function(item, total) { item.rect.draw() })
