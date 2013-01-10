@@ -6,6 +6,7 @@
     <script src="jaws.js"></script>
     <script src="spacebase.js"></script>
     <script src="spacebaserobots.js"></script>
+    <script src="spacebasejobs.js"></script>
 
     <link type="text/css" rel="stylesheet" href="style.css" />
     <title>Space Base</title>
@@ -44,38 +45,16 @@
 
     function x(){
 
-	var worker = getAvailableWorker();
+	// Get Coordinates
+	var col = getTileNoFromCord(jaws.mouse_x);
+	var row = getTileNoFromCord(jaws.mouse_y);
 
-	if ( worker !== undefined ) {
-		var text = "- "
-		text += " Mouse x: " + jaws.mouse_x;
-		text += " Mouse y: " + jaws.mouse_y;
-		text += " Tile x: " + getTileNoFromCord(jaws.mouse_x);
-		text += " Tile y: " + getTileNoFromCord(jaws.mouse_y);
-		text += " Player x: " + getTileNoFromCord(worker.rect().x);
-		text += " Player y: " + getTileNoFromCord(worker.rect().y);
+	// Create Job
+	var job = spacebase.job(spacebase.JOB_WALK, col, row);
+	// Add Job to jobs list
+	jaws.jobs.push(job);
 
-		var matrix = exportTileMapToPathMatrix();
-		var start = {col: getTileNoFromCord(worker.rect().x), row: getTileNoFromCord(worker.rect().y) }
-		var goal = {col: getTileNoFromCord(jaws.mouse_x), row: getTileNoFromCord(jaws.mouse_y) }
-
-		matrix[start.row][start.col] = 1;
-
-		var shortest_path = jspath.find_path(matrix, start, goal);
-		if ( shortest_path.length > 0 ){
-			var next_cell = shortest_path[shortest_path.length-2];
-			text += " Next cell " + next_cell.row + ", " + next_cell.col
-			text += " Index: " + (shortest_path.length-2)
-			worker.path_index = shortest_path.length-2;
-			worker.path = shortest_path;
-			worker.occupied = true;
-		} else {
-			text += " Could not find a path"
-		}
-		jaws.log(text)
-	} else {
-	        jaws.log("I am sorry, but all Workers are busy.")
-	}
+	// Job Will Be Started In the Update Loop
     }
 
     function getTileNoFromCord(cord){
@@ -102,12 +81,14 @@
     }
 
     function Example() {
+      var test
       var blocks
       var fps
       var workers = new jaws.SpriteList()
       workers.push(spacebase.robot(0,0))
       workers.push(spacebase.robot(0,64))
       workers.push(spacebase.robot(0,128))
+      var jobs = new jaws.SpriteList()
 
       /* Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
@@ -138,13 +119,12 @@
         // Later on we can look them up really fast (see player.move)
         tile_map.push(blocks)
 
-
         jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
         jaws.preventDefaultKeys(["up", "down", "left", "right", "space"])
 
         jaws.tile_map = tile_map;
 	jaws.workers = workers;
-
+	jaws.jobs = jobs;
 
 	// For Debugging
 	jaws.on_keydown("r", function(){jaws.workers.push(new spacebase.robot(0,0))})
@@ -154,36 +134,17 @@
       this.update = function() {
 
 	jaws.workers.forEach(function(worker){
-		if ( worker.path != undefined ){
-			var next_cell = worker.path[worker.path_index];
-			var x = worker.rect().x;
-			var y = worker.rect().y;
-			var next_x = next_cell.col *32
-			var next_y = next_cell.row *32
+		worker.work();
+	});
 
-			var direction;
-
-			if ( next_x > x ) { direction = "right" }
-			if ( next_x < x ) { direction = "left" }
-			if ( next_y < y ) { direction = "up" }
-			if ( next_y > y ) { direction = "down" }
-
-			if(direction === "left"  ) { worker.move(-1,0);  worker.setImage(worker.anim_left.next()) }
-			if(direction === "right" ) { worker.move(1,0);   worker.setImage(worker.anim_right.next()) }
-			if(direction === "up"    ) { worker.move(0, -1); worker.setImage(worker.anim_up.next()) }
-			if(direction === "down"  ) { worker.move(0, 1);  worker.setImage(worker.anim_down.next()) }
-
-			if ( next_x === x && next_y === y ){
-				worker.path_index--;
-				if ( worker.path_index < 0 ){
-					worker.path = undefined;
-					worker.occupied = false;
-				}
-			}
-		} else {
-			worker.setImage( worker.anim_default.next() )
+	jaws.jobs.forEach(function(job){
+		// Start job
+		if ( job.started == false ) {
+			job.start();
 		}
 	});
+
+
 
         //jaws.forceInsideCanvas(player)
         fps.innerHTML = jaws.game_loop.fps
@@ -193,6 +154,7 @@
       this.draw = function() {
         jaws.clear()
         blocks.draw()
+	jobs.draw()
         workers.draw()
 
         // uncomment to show bounding box rects
@@ -203,7 +165,7 @@
     
     jaws.onload = function() {
       jaws.unpack()
-      jaws.assets.add(["droid_11x15.png","block.png","dirt.png"])
+      jaws.assets.add(["droid_11x15.png","block.png","dirt.png","job_default.png"])
       jaws.start(Example)  // Our convenience function jaws.start() will load assets, call setup and loop update/draw in 60 FPS
     }
   </script>

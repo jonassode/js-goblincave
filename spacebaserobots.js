@@ -27,6 +27,38 @@ spacebase.robot = function(x, y){
 
         object.setImage( object.anim_default.next() );
 
+	object.work = function(){
+		if ( this.path != undefined ){
+			var next_cell = this.path[this.path_index];
+			var x = this.rect().x;
+			var y = this.rect().y;
+			var next_x = next_cell.col *32
+			var next_y = next_cell.row *32
+
+			var direction;
+
+			if ( next_x > x ) { direction = "right" }
+			if ( next_x < x ) { direction = "left" }
+			if ( next_y < y ) { direction = "up" }
+			if ( next_y > y ) { direction = "down" }
+
+			if(direction === "left"  ) { this.move(-1,0);  this.setImage(this.anim_left.next()) }
+			if(direction === "right" ) { this.move(1,0);   this.setImage(this.anim_right.next()) }
+			if(direction === "up"    ) { this.move(0, -1); this.setImage(this.anim_up.next()) }
+			if(direction === "down"  ) { this.move(0, 1);  this.setImage(this.anim_down.next()) }
+
+			if ( next_x === x && next_y === y ){
+				this.path_index--;
+				if ( this.path_index < 0 ){
+					this.path = undefined;
+					this.job.work(this);
+				}
+			}
+		} else {
+			this.setImage( this.anim_default.next() )
+		}
+	}
+
 	return object;
 };
 
