@@ -29,12 +29,12 @@
  
   <script>
     function getAvailableWorker(){
-	var workers = jaws.workers;
+	var workers = spacebase.workers;
 	var availableWorker;
 
 	workers.forEach(
 		function(worker){
-			if(worker.occupied == false){
+			if(worker.state == spacebase.STATE_IDLE){
 				availableWorker = worker;
 			};
 		}
@@ -50,26 +50,26 @@
 	var row = getTileNoFromCord(jaws.mouse_y);
 
 	// Create Job
-	var job = spacebase.job(spacebase.JOB_WALK, col, row);
+	var job = spacebase.job(spacebase.JOB_BUILD, col, row);
 	// Add Job to jobs list
-	jaws.jobs.push(job);
+	spacebase.jobs.push(job);
 
 	// Job Will Be Started In the Update Loop
     }
 
     function getTileNoFromCord(cord){
-	return Math.floor(cord / jaws.tile_map.cell_size[0]);
+	return Math.floor(cord / spacebase.tile_map.cell_size[0]);
     }
 
     function exportTileMapToPathMatrix(){
-	var cols = jaws.tile_map.size[0]
-	var rows = jaws.tile_map.size[1]
+	var cols = spacebase.tile_map.size[0]
+	var rows = spacebase.tile_map.size[1]
 	var matrix = jspath.create_matrix(rows,cols);
-	var cell_size = jaws.tile_map.cell_size[0];
+	var cell_size = spacebase.tile_map.cell_size[0];
 
 	for( row = 0; row < matrix.length; row++) {
 		for( col = 0; col < matrix[row].length; col++) {
-			var cells = jaws.tile_map.at(col*cell_size,row*cell_size);
+			var cells = spacebase.tile_map.at(col*cell_size,row*cell_size);
 			if ( cells.length > 0 && cells[0].options.blocking == true){
 				matrix[row][col] = 0;
 			} else {
@@ -80,14 +80,14 @@
 	return matrix;
     }
 
-    function Example() {
-      var test
+    function Main() {
+      var buildings = new jaws.SpriteList()
       var blocks
       var fps
       var workers = new jaws.SpriteList()
       workers.push(spacebase.robot(0,0))
-      workers.push(spacebase.robot(0,64))
-      workers.push(spacebase.robot(0,128))
+      //workers.push(spacebase.robot(0,64))
+      //workers.push(spacebase.robot(0,128))
       var jobs = new jaws.SpriteList()
 
       /* Called once when a game state is activated. Use it for one-time setup code. */
@@ -122,22 +122,23 @@
         jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
         jaws.preventDefaultKeys(["up", "down", "left", "right", "space"])
 
-        jaws.tile_map = tile_map;
-	jaws.workers = workers;
-	jaws.jobs = jobs;
+        spacebase.tile_map = tile_map;
+	spacebase.workers = workers;
+	spacebase.jobs = jobs;
+	spacebase.buildings = buildings;
 
 	// For Debugging
-	jaws.on_keydown("r", function(){jaws.workers.push(new spacebase.robot(0,0))})
+	jaws.on_keydown("r", function(){spacebase.workers.push(new spacebase.robot(0,0))})
       }
 
       /* update() will get called each game tick with your specified FPS. Put game logic here. */
       this.update = function() {
 
-	jaws.workers.forEach(function(worker){
-		worker.work();
+	spacebase.workers.forEach(function(worker){
+		worker.act();
 	});
 
-	jaws.jobs.forEach(function(job){
+	spacebase.jobs.forEach(function(job){
 		// Start job
 		if ( job.started == false ) {
 			job.start();
@@ -155,6 +156,7 @@
         jaws.clear()
         blocks.draw()
 	jobs.draw()
+	buildings.draw()
         workers.draw()
 
         // uncomment to show bounding box rects
@@ -165,8 +167,8 @@
     
     jaws.onload = function() {
       jaws.unpack()
-      jaws.assets.add(["droid_11x15.png","block.png","dirt.png","job_default.png"])
-      jaws.start(Example)  // Our convenience function jaws.start() will load assets, call setup and loop update/draw in 60 FPS
+      jaws.assets.add(["droid_11x15.png","block.png","dirt.png","job_default.png","wall.png","floor.png"])
+      jaws.start(Main)  // Our convenience function jaws.start() will load assets, call setup and loop update/draw in 60 FPS
     }
   </script>
 

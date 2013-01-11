@@ -1,9 +1,15 @@
+spacebase.STATE_IDLE = 0;
+spacebase.STATE_WALKING = 1;
+spacebase.STATE_BUILDING = 2;
+
 spacebase.robot = function(x, y){
 
 	var object = {};
 
         object = new jaws.Sprite({x:x, y:y, scale: 2})
-	object.occupied = false;
+	// Used for keeping track of actions, e.g. building stuff
+	object.progress = 30;
+	object.state = spacebase.STATE_IDLE;
         object.move = function(x, y) {
          
           // Have our tile map return the items that occupy the cells which are touched by object.rect
@@ -24,10 +30,28 @@ spacebase.robot = function(x, y){
         object.anim_down = anim.slice(8,10)
         object.anim_left = anim.slice(10,12)
         object.anim_right = anim.slice(12,14)
+        object.anim_build = anim.slice(15,17)
 
         object.setImage( object.anim_default.next() );
 
-	object.work = function(){
+	object.act = function(){
+		switch(this.state)
+		{
+		case spacebase.STATE_IDLE:
+		  this.idle();
+		  break;
+		case spacebase.STATE_WALKING:
+		  this.walk();
+		  break;
+		case spacebase.STATE_BUILDING:
+		  this.build();
+		  break;
+		default:
+		  jaws.log("ROBOT IN UNKNWON STATE! " + worker.state);
+		}
+	}
+
+	object.walk = function(){
 		if ( this.path != undefined ){
 			var next_cell = this.path[this.path_index];
 			var x = this.rect().x;
@@ -54,9 +78,24 @@ spacebase.robot = function(x, y){
 					this.job.work(this);
 				}
 			}
-		} else {
-			this.setImage( this.anim_default.next() )
 		}
+	}
+	object.idle = function(){
+		this.setImage( this.anim_default.next() )
+	}
+	object.build = function(){
+	        this.setImage( this.anim_build.next() )
+		this.progress++;
+		if ( this.progress % 10 === 0 ){
+			this.job.setImage( this.job.anim_build.next() )
+		}
+		if ( this.progress == 100 ){
+			spacebase.buildings.push(new Sprite({image: "floor.png", x: this.job.col * 32, y: this.job.row * 32, blocking: false}));
+			spacebase.jobs.remove(this.job);
+			this.state = spacebase.STATE_IDLE;
+			this.progress = 30;
+		}
+		jaws.log(this.progress);
 	}
 
 	return object;

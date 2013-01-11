@@ -1,15 +1,22 @@
 spacebase.JOB_WALK = {type: 1};
 spacebase.JOB_WALK.work = function(job, worker){
 	// Release the worker
-	worker.occupied = false;
+	worker.state = spacebase.STATE_IDLE;
 	// Remove myself from joblist
-	jaws.jobs.remove(job);
+	spacebas.jobs.remove(job);
 	// Log
 	jaws.log("Nothing, you finished walking");
 }
 spacebase.JOB_BUILD = {type: 2};
 spacebase.JOB_BUILD.work = function(job, worker){
 	jaws.log("This is where the building starts.");
+
+	// Release the worker
+	worker.state = spacebase.STATE_BUILDING;
+	// Remove myself from joblist
+	job.setImage( job.anim_build.next() )
+	//spacebase.jobs.remove(job);
+
 }
 
 spacebase.job = function(type, col, row){
@@ -24,6 +31,7 @@ spacebase.job = function(type, col, row){
 
         var anim = new jaws.Animation({sprite_sheet: "job_default.png", frame_size: [32,32], frame_duration: 100})
         object.anim_default = anim.slice(0,1)
+        object.anim_build = anim.slice(1,9)
 
         object.setImage( object.anim_default.next() );
 
@@ -52,7 +60,7 @@ spacebase.job = function(type, col, row){
 				text += " Index: " + (shortest_path.length-2)
 				worker.path_index = shortest_path.length-2;
 				worker.path = shortest_path;
-				worker.occupied = true;
+				worker.state = spacebase.STATE_WALKING;
 				worker.job = this;
 				this.started = true;
 			} else {
