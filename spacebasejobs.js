@@ -55,9 +55,6 @@ spacebase.job = function(type, col, row){
 
 			var shortest_path = jspath.find_path(matrix, start, goal);
 			if ( shortest_path.length > 0 ){
-				var next_cell = shortest_path[shortest_path.length-2];
-				text += " Next cell " + next_cell.row + ", " + next_cell.col
-				text += " Index: " + (shortest_path.length-2)
 				worker.path_index = shortest_path.length-2;
 				worker.path = shortest_path;
 				worker.state = spacebase.STATE_WALKING;

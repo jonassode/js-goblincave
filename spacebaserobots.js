@@ -53,6 +53,9 @@ spacebase.robot = function(x, y){
 
 	object.walk = function(){
 		if ( this.path != undefined ){
+			if ( this.path_index < 0 ) {
+				this.path_index = 0;
+			}
 			var next_cell = this.path[this.path_index];
 			var x = this.rect().x;
 			var y = this.rect().y;
@@ -90,7 +93,7 @@ spacebase.robot = function(x, y){
 			this.job.setImage( this.job.anim_build.next() )
 		}
 		if ( this.progress == 100 ){
-			spacebase.buildings.push(new Sprite({image: "floor.png", x: this.job.col * 32, y: this.job.row * 32, blocking: false}));
+			spacebase.buildings.push(new Sprite({image: "building_floor.png", x: this.job.col * 32, y: this.job.row * 32, blocking: false}));
 			spacebase.jobs.remove(this.job);
 			this.state = spacebase.STATE_IDLE;
 			this.progress = 30;
