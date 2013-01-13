@@ -3,10 +3,16 @@ spacebase.JOB_WALK.work = function(job, worker){
 	// Release the worker
 	worker.state = spacebase.STATE_IDLE;
 	// Remove myself from joblist
-	spacebas.jobs.remove(job);
-	// Log
-	jaws.log("Nothing, you finished walking");
+	spacebase.jobs.remove(job);
 }
+spacebase.JOB_WALK.legal = function(job){
+	if ( spacebase.tile_map.cell(job.col, job.row)[0].options.blocking == false ){
+		return true;
+	} else {
+		return false;
+	}
+}
+
 spacebase.JOB_BUILD = {type: 2};
 spacebase.JOB_BUILD.work = function(job, worker){
 	jaws.log("This is where the building starts.");
@@ -15,11 +21,16 @@ spacebase.JOB_BUILD.work = function(job, worker){
 	worker.state = spacebase.STATE_BUILDING;
 	// Remove myself from joblist
 	job.setImage( job.anim_build.next() )
-	//spacebase.jobs.remove(job);
-
+}
+spacebase.JOB_BUILD.legal = function(job){
+	if ( spacebase.tile_map.cell(job.col, job.row)[0].options.blocking == false ){
+		return true;
+	} else {
+		return false;
+	}
 }
 
-spacebase.job = function(type, col, row){
+spacebase.job = function(type, target, col, row){
 
 	var object = {};
 
@@ -28,6 +39,7 @@ spacebase.job = function(type, col, row){
 	object.type = type;
 	object.col = col;
 	object.row = row;
+	object.target = target;
 
         var anim = new jaws.Animation({sprite_sheet: "job_default.png", frame_size: [32,32], frame_duration: 100})
         object.anim_default = anim.slice(0,1)
@@ -43,10 +55,6 @@ spacebase.job = function(type, col, row){
 		var worker = getAvailableWorker();
 
 		if ( worker !== undefined ) {
-			var text = "- "
-			text += " Worker x: " + getTileNoFromCord(worker.rect().x);
-			text += " Worker y: " + getTileNoFromCord(worker.rect().y);
-
 			var matrix = exportTileMapToPathMatrix();
 			var start = {col: getTileNoFromCord(worker.rect().x), row: getTileNoFromCord(worker.rect().y) }
 			var goal = {col: this.col, row: this.row }
@@ -60,12 +68,7 @@ spacebase.job = function(type, col, row){
 				worker.state = spacebase.STATE_WALKING;
 				worker.job = this;
 				this.started = true;
-			} else {
-				text += " Could not find a path to Target."
 			}
-			jaws.log(text)
-		} else {
-			jaws.log("I am sorry, but all Workers are busy. Wait for Another Turn.")
 		}
 	}
 

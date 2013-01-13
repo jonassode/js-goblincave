@@ -21,7 +21,6 @@ spacebase.robot = function(x, y){
           this.y += y
           //if(tile_map.atRect(object.rect()).length > 0) { this.y -= y }
 
-	  //jaws.log("object: " + object.rect().toString())
         }
 
         var anim = new jaws.Animation({sprite_sheet: "droid_11x15.png", frame_size: [11,15], frame_duration: 100})
@@ -57,6 +56,9 @@ spacebase.robot = function(x, y){
 				this.path_index = 0;
 			}
 			var next_cell = this.path[this.path_index];
+
+			// if next cell is blocked then do new path finding
+
 			var x = this.rect().x;
 			var y = this.rect().y;
 			var next_x = next_cell.col *32
@@ -93,12 +95,13 @@ spacebase.robot = function(x, y){
 			this.job.setImage( this.job.anim_build.next() )
 		}
 		if ( this.progress == 100 ){
-			spacebase.buildings.push(new Sprite({image: "building_floor.png", x: this.job.col * 32, y: this.job.row * 32, blocking: false}));
+			var building = spacebase.building(this.job.target, this.job.col, this.job.row);
+			spacebase.buildings.push(building);
+			spacebase.tile_map.push(building);
 			spacebase.jobs.remove(this.job);
 			this.state = spacebase.STATE_IDLE;
 			this.progress = 30;
 		}
-		jaws.log(this.progress);
 	}
 
 	return object;

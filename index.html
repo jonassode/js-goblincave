@@ -7,13 +7,15 @@
     <script src="spacebase.js"></script>
     <script src="spacebaserobots.js"></script>
     <script src="spacebasejobs.js"></script>
+    <script src="spacebasemenu.js"></script>
+    <script src="spacebasebuildings.js"></script>
 
     <link type="text/css" rel="stylesheet" href="style.css" />
     <title>Space Base</title>
   </head>
 <body>
 
-  <canvas width=480 height=480 onclick="x();"></canvas>
+  <canvas width=840 height=480 onclick="x();"></canvas>
   FPS: <span id="fps"></span>.
   
   <div id="info">
@@ -43,6 +45,15 @@
 	return availableWorker;
     }
 
+    function withinTileMap(col, row){
+
+	if ( col >= 0 && col < spacebase.tile_map.size[0] && row >= 0 && row < spacebase.tile_map.size[1] ){
+		return true;
+	} else {
+		return false;
+	}
+    }
+
     function x(){
 
 	// Get Coordinates
@@ -50,11 +61,19 @@
 	var row = getTileNoFromCord(jaws.mouse_y);
 
 	// Create Job
-	var job = spacebase.job(spacebase.JOB_BUILD, col, row);
-	// Add Job to jobs list
-	spacebase.jobs.push(job);
+	if ( withinTileMap(col, row)){
+		if ( spacebase.selection.item != undefined ){
+			var job = spacebase.job(spacebase.selection.item.jobtype, spacebase.selection.item.target, col, row);
+			// Add Job to jobs list
+			if ( job.type.legal(job) ){
+				spacebase.jobs.push(job);
+			}
+		}
+	} else {
+		// Check click for menu.
+		spacebase.action_menu.select_item(jaws.mouse_x, jaws.mouse_y);
+	}
 
-	// Job Will Be Started In the Update Loop
     }
 
     function getTileNoFromCord(cord){
@@ -69,20 +88,23 @@
 
 	for( row = 0; row < matrix.length; row++) {
 		for( col = 0; col < matrix[row].length; col++) {
-			var cells = spacebase.tile_map.at(col*cell_size,row*cell_size);
-			if ( cells.length > 0 && cells[0].options.blocking == true){
-				matrix[row][col] = 0;
-			} else {
-				matrix[row][col] = 1;
-			}
+			// Set it to walkable ( 1 ) by default
+			matrix[row][col] = 1;			
+			
+			spacebase.tile_map.at(col*cell_size,row*cell_size).forEach(function(item){
+				if ( item.options.blocking == true){
+					matrix[row][col] = 0;
+				}
+			});
 		}
 	}
 	return matrix;
     }
 
     function Main() {
+      var action_menu = spacebase.menu(641, 0)
       var buildings = new jaws.SpriteList()
-      var blocks
+      var blocks = new jaws.SpriteList()
       var fps
       var workers = new jaws.SpriteList()
       workers.push(spacebase.robot(0,0))
@@ -93,16 +115,15 @@
       /* Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
         fps = document.getElementById("fps")
-        blocks = new jaws.SpriteList()
         
-	var tilemap_width = 15;
+	var tilemap_width = 20;
 	var tilemap_height = 15;
 
 	// Get some Random terrain
 	for ( var j = 0; j < tilemap_height; j++){
 		for ( var i = 0; i <tilemap_width; i++){
-			var x = j*32;
-			var y = i*32;
+			var x = i*32;
+			var y = j*32;
 
 			if ( Math.floor((Math.random()*10)+1) > 8 && x != 0 ){
 			        blocks.push( new Sprite({image: "block.png", x: x, y: y, blocking: true }) )
@@ -111,6 +132,10 @@
 			}
 		}
 	}
+
+	action_menu.add( new Sprite({image: "button_floor.png" }), spacebase.JOB_BUILD, "floor");
+	action_menu.add( new Sprite({image: "button_wall.png" }), spacebase.JOB_BUILD, "wall");
+	action_menu.add( new Sprite({image: "button_solarpanel.png" }), spacebase.JOB_BUILD, "solarpanel");
 
         // A tilemap, each cell is 32x32 pixels. There's 10 such cells across and 10 downwards.
         var tile_map = new jaws.TileMap({size: [tilemap_width,tilemap_height], cell_size: [32,32]})
@@ -126,6 +151,7 @@
 	spacebase.workers = workers;
 	spacebase.jobs = jobs;
 	spacebase.buildings = buildings;
+	spacebase.action_menu = action_menu;
 
 	// For Debugging
 	jaws.on_keydown("r", function(){spacebase.workers.push(new spacebase.robot(0,0))})
@@ -141,7 +167,10 @@
 	spacebase.jobs.forEach(function(job){
 		// Start job
 		if ( job.started == false ) {
-			job.start();
+			// Only look at the jobs if there are at least one available worker
+			if ( getAvailableWorker() != undefined ){
+				job.start();
+			}
 		}
 	});
 
@@ -158,6 +187,11 @@
 	jobs.draw()
 	buildings.draw()
         workers.draw()
+	action_menu.draw()
+
+	if ( spacebase.selection.item != undefined ){
+		spacebase.selection.draw();
+	}
 
         // uncomment to show bounding box rects
         //blocks.forEach( function(item, total) { item.rect.draw() })
@@ -167,7 +201,19 @@
     
     jaws.onload = function() {
       jaws.unpack()
-      jaws.assets.add(["droid_11x15.png","block.png","dirt.png","job_default.png","wall.png","floor.png"])
+      jaws.assets.add([
+	"droid_11x15.png",
+	"block.png",
+	"dirt.png",
+	"job_default.png",
+	"building_wall.png",
+	"building_floor.png",
+	"button_wall.png",
+	"button_floor.png",
+	"button__selector.png",
+	"button_solarpanel.png",
+	"building_solarpanel.png"
+	])
       jaws.start(Main)  // Our convenience function jaws.start() will load assets, call setup and loop update/draw in 60 FPS
     }
   </script>
