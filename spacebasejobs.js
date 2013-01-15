@@ -52,19 +52,14 @@ spacebase.job = function(type, target, col, row){
 	}
 
 	object.start = function() {
-		var worker = getAvailableWorker();
+		var goal = {col: this.col, row: this.row }
+		var worker = getAvailableWorker(goal);
 
 		if ( worker !== undefined ) {
-			var matrix = exportTileMapToPathMatrix();
-			var start = {col: getTileNoFromCord(worker.rect().x), row: getTileNoFromCord(worker.rect().y) }
-			var goal = {col: this.col, row: this.row }
+			var path = worker.find_path(goal);
 
-			matrix[start.row][start.col] = 1;
-
-			var shortest_path = jspath.find_path(matrix, start, goal);
-			if ( shortest_path.length > 0 ){
-				worker.path_index = shortest_path.length-2;
-				worker.path = shortest_path;
+			if ( path.length > 0 ){
+				worker.set_path(path);
 				worker.state = spacebase.STATE_WALKING;
 				worker.job = this;
 				this.started = true;

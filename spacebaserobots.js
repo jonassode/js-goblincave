@@ -50,37 +50,79 @@ spacebase.robot = function(x, y){
 		}
 	}
 
+	object.col = function(){
+		return getTileNoFromCord(this.rect().x);
+	}
+
+	object.row = function(){
+		return getTileNoFromCord(this.rect().y);
+	}
+
+	object.find_path = function(goal){
+
+		var matrix = exportTileMapToPathMatrix();
+		var start = {col: this.col(), row: this.row() }
+
+		matrix[start.row][start.col] = 1;
+
+		var path = jspath.find_path(matrix, start, goal);
+		return path;
+	}
+
+	object.set_path = function(path){
+		this.path = path;
+		if ( path != undefined ){
+			this.path_index = path.length-2;
+		} else {
+			this.path_index = undefined;
+		}
+	}
+
 	object.walk = function(){
-		if ( this.path != undefined ){
+		if ( this.state == spacebase.STATE_WALKING ){
 			if ( this.path_index < 0 ) {
 				this.path_index = 0;
 			}
 			var next_cell = this.path[this.path_index];
 
-			// if next cell is blocked then do new path finding
+			if ( spacebase.tile_map.check(next_cell.col, next_cell.row, "blocking", true)) {
+				var goal = {col: this.job.col, row: this.job.row }
+				var path = this.find_path(goal);
+				if ( path.length > 0 ){
+					this.set_path(path);
+				} else {
+					// Clear path
+					this.set_path(undefined);
+					this.state = spacebase.STATE_IDLE;
+					this.job.started = false;
+					this.job = undefined;
+				}
+			}
 
-			var x = this.rect().x;
-			var y = this.rect().y;
-			var next_x = next_cell.col *32
-			var next_y = next_cell.row *32
+			if ( this.path != undefined ) {
+				var x = this.rect().x;
+				var y = this.rect().y;
+				var next_x = next_cell.col *32
+				var next_y = next_cell.row *32
 
-			var direction;
+				var direction;
 
-			if ( next_x > x ) { direction = "right" }
-			if ( next_x < x ) { direction = "left" }
-			if ( next_y < y ) { direction = "up" }
-			if ( next_y > y ) { direction = "down" }
+				if ( next_x > x ) { direction = "right" }
+				if ( next_x < x ) { direction = "left" }
+				if ( next_y < y ) { direction = "up" }
+				if ( next_y > y ) { direction = "down" }
 
-			if(direction === "left"  ) { this.move(-1,0);  this.setImage(this.anim_left.next()) }
-			if(direction === "right" ) { this.move(1,0);   this.setImage(this.anim_right.next()) }
-			if(direction === "up"    ) { this.move(0, -1); this.setImage(this.anim_up.next()) }
-			if(direction === "down"  ) { this.move(0, 1);  this.setImage(this.anim_down.next()) }
+				if(direction === "left"  ) { this.move(-1,0);  this.setImage(this.anim_left.next()) }
+				if(direction === "right" ) { this.move(1,0);   this.setImage(this.anim_right.next()) }
+				if(direction === "up"    ) { this.move(0, -1); this.setImage(this.anim_up.next()) }
+				if(direction === "down"  ) { this.move(0, 1);  this.setImage(this.anim_down.next()) }
 
-			if ( next_x === x && next_y === y ){
-				this.path_index--;
-				if ( this.path_index < 0 ){
-					this.path = undefined;
-					this.job.work(this);
+				if ( next_x === x && next_y === y ){
+					this.path_index--;
+					if ( this.path_index < 0 ){
+						this.path = undefined;
+						this.job.work(this);
+					}
 				}
 			}
 		}

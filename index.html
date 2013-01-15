@@ -30,14 +30,25 @@
   <div id="jaws-log"></div>
  
   <script>
-    function getAvailableWorker(){
+    function getAvailableWorker(goal){
 	var workers = spacebase.workers;
 	var availableWorker;
+	var steps;
+	var shortest_path;
 
 	workers.forEach(
 		function(worker){
 			if(worker.state == spacebase.STATE_IDLE){
-				availableWorker = worker;
+				if ( goal ){
+					var path = worker.find_path(goal);
+					if ( path.length > 0 && ( !steps || steps > path.length )){				
+						availableWorker = worker;
+						shortest_path = path;
+						steps = path.length;
+					}
+				} else {
+					availableWorker = worker;
+				}
 			};
 		}
 	);
@@ -91,11 +102,9 @@
 			// Set it to walkable ( 1 ) by default
 			matrix[row][col] = 1;			
 			
-			spacebase.tile_map.at(col*cell_size,row*cell_size).forEach(function(item){
-				if ( item.options.blocking == true){
-					matrix[row][col] = 0;
-				}
-			});
+			if ( spacebase.tile_map.check(col,row, "blocking", true)) {
+				matrix[row][col] = 0;
+			}
 		}
 	}
 	return matrix;
@@ -139,6 +148,17 @@
 
         // A tilemap, each cell is 32x32 pixels. There's 10 such cells across and 10 downwards.
         var tile_map = new jaws.TileMap({size: [tilemap_width,tilemap_height], cell_size: [32,32]})
+
+	// Extending Tilemap
+	tile_map.check = function(col, row, option, value){
+		var checked_value = false;
+		this.cell(col,row).forEach(function(item){
+			if ( item.options[option] == value){
+				checked_value = true;
+			}
+		});
+		return checked_value;
+	}
 
         // Fit all items in array blocks into correct cells in the tilemap
         // Later on we can look them up really fast (see player.move)
