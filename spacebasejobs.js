@@ -41,7 +41,7 @@ spacebase.job = function(type, target, col, row){
 	object.row = row;
 	object.target = target;
 
-        var anim = new jaws.Animation({sprite_sheet: "job_default.png", frame_size: [32,32], frame_duration: 100})
+        var anim = new jaws.Animation({sprite_sheet: "images/job_default.png", frame_size: [32,32], frame_duration: 100})
         object.anim_default = anim.slice(0,1)
         object.anim_build = anim.slice(1,9)
 

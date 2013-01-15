@@ -23,7 +23,7 @@ spacebase.robot = function(x, y){
 
         }
 
-        var anim = new jaws.Animation({sprite_sheet: "droid_11x15.png", frame_size: [11,15], frame_duration: 100})
+        var anim = new jaws.Animation({sprite_sheet: "images/droid_11x15.png", frame_size: [11,15], frame_duration: 100})
         object.anim_default = anim.slice(0,5)
         object.anim_up = anim.slice(6,8)
         object.anim_down = anim.slice(8,10)

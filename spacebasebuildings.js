@@ -2,9 +2,9 @@ spacebase.load_buildings = function(){
 
 	var arr = new Array();
 
-	arr["wall"]	 = {image:"building_wall.png",	blocking:true}
-	arr["floor"]	 = {image:"building_floor.png",	blocking:false}
-	arr["solarpanel"]= {image:"building_solarpanel.png",	blocking:true}
+	arr["wall"]	 = {image:"images/building_wall.png",	blocking:true}
+	arr["floor"]	 = {image:"images/building_floor.png",	blocking:false}
+	arr["solarpanel"]= {image:"images/building_solarpanel.png",	blocking:true}
 
 	return arr;
 }

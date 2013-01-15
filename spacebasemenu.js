@@ -5,7 +5,7 @@ spacebase.selection
 // The Menu Object
 spacebase.menu = function(x, y){
 
-	spacebase.selection = new Sprite({image: "button__selector.png" });
+	spacebase.selection = new Sprite({image: "images/button__selector.png" });
 
 	var object = {};
         object = new jaws.SpriteList()

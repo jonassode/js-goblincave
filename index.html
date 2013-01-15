@@ -126,16 +126,16 @@
 			var y = j*32;
 
 			if ( Math.floor((Math.random()*10)+1) > 8 && x != 0 ){
-			        blocks.push( new Sprite({image: "block.png", x: x, y: y, blocking: true }) )
+			        blocks.push( new Sprite({image: "images/block.png", x: x, y: y, blocking: true }) )
 			} else {
-				blocks.push( new Sprite({image: "dirt.png", x: x, y: y, blocking: false}) )
+				blocks.push( new Sprite({image: "images/dirt.png", x: x, y: y, blocking: false}) )
 			}
 		}
 	}
 
-	action_menu.add( new Sprite({image: "button_floor.png" }), spacebase.JOB_BUILD, "floor");
-	action_menu.add( new Sprite({image: "button_wall.png" }), spacebase.JOB_BUILD, "wall");
-	action_menu.add( new Sprite({image: "button_solarpanel.png" }), spacebase.JOB_BUILD, "solarpanel");
+	action_menu.add( new Sprite({image: "images/button_floor.png" }), spacebase.JOB_BUILD, "floor");
+	action_menu.add( new Sprite({image: "images/button_wall.png" }), spacebase.JOB_BUILD, "wall");
+	action_menu.add( new Sprite({image: "images/button_solarpanel.png" }), spacebase.JOB_BUILD, "solarpanel");
 
         // A tilemap, each cell is 32x32 pixels. There's 10 such cells across and 10 downwards.
         var tile_map = new jaws.TileMap({size: [tilemap_width,tilemap_height], cell_size: [32,32]})
@@ -202,17 +202,17 @@
     jaws.onload = function() {
       jaws.unpack()
       jaws.assets.add([
-	"droid_11x15.png",
-	"block.png",
-	"dirt.png",
-	"job_default.png",
-	"building_wall.png",
-	"building_floor.png",
-	"button_wall.png",
-	"button_floor.png",
-	"button__selector.png",
-	"button_solarpanel.png",
-	"building_solarpanel.png"
+	"images/droid_11x15.png",
+	"images/block.png",
+	"images/dirt.png",
+	"images/job_default.png",
+	"images/building_wall.png",
+	"images/building_floor.png",
+	"images/button_wall.png",
+	"images/button_floor.png",
+	"images/button__selector.png",
+	"images/button_solarpanel.png",
+	"images/building_solarpanel.png"
 	])
       jaws.start(Main)  // Our convenience function jaws.start() will load assets, call setup and loop update/draw in 60 FPS
     }
