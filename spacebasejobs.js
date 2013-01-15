@@ -6,7 +6,7 @@ spacebase.JOB_WALK.work = function(job, worker){
 	spacebase.jobs.remove(job);
 }
 spacebase.JOB_WALK.legal = function(job){
-	if ( spacebase.tile_map.cell(job.col, job.row)[0].options.blocking == false ){
+	if ( spacebase.tile_map.check(job.col, job.row, "blocking", false )){
 		return true;
 	} else {
 		return false;
@@ -15,15 +15,13 @@ spacebase.JOB_WALK.legal = function(job){
 
 spacebase.JOB_BUILD = {type: 2};
 spacebase.JOB_BUILD.work = function(job, worker){
-	jaws.log("This is where the building starts.");
-
 	// Release the worker
 	worker.state = spacebase.STATE_BUILDING;
 	// Remove myself from joblist
 	job.setImage( job.anim_build.next() )
 }
 spacebase.JOB_BUILD.legal = function(job){
-	if ( spacebase.tile_map.cell(job.col, job.row)[0].options.blocking == false ){
+	if ( spacebase.tile_map.check(job.col, job.row, "blocking", false )){
 		return true;
 	} else {
 		return false;
