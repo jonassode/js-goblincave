@@ -73,11 +73,17 @@
 
 	// Create Job
 	if ( withinTileMap(col, row)){
-		if ( spacebase.selection.item != undefined ){
+		// Check if there is a job at this place.
+		var job = spacebase.tile_map.job(col, row);
+		// Job exists on this place we remove it
+		if ( job ){
+			job.die();
+		// Else we create one
+		} else if ( spacebase.selection.item ){
 			var job = spacebase.job(spacebase.selection.item.jobtype, spacebase.selection.item.target, col, row);
 			// Add Job to jobs list
 			if ( job.type.legal(job) ){
-				spacebase.jobs.push(job);
+				job.add();
 			}
 		}
 	} else {
@@ -158,6 +164,17 @@
 			}
 		});
 		return checked_value;
+	}
+
+	// Extending Tilemap
+	tile_map.job = function(col, row){
+		var found_job;
+		spacebase.jobs.forEach(function(item){
+			if ( item.col == col && item.row == row ){
+				found_job = item;
+			}
+		});
+		return found_job;
 	}
 
         // Fit all items in array blocks into correct cells in the tilemap

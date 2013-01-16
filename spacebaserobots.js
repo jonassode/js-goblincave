@@ -78,6 +78,14 @@ spacebase.robot = function(x, y){
 		}
 	}
 
+	object.stop_working = function(){
+		this.set_path(undefined);
+		this.state = spacebase.STATE_IDLE;
+		this.job.started = false;
+		this.job = undefined;
+		this.progress = 30;
+	}
+
 	object.walk = function(){
 		if ( this.state == spacebase.STATE_WALKING ){
 			if ( this.path_index < 0 ) {
@@ -91,11 +99,8 @@ spacebase.robot = function(x, y){
 				if ( path.length > 0 ){
 					this.set_path(path);
 				} else {
-					// Clear path
-					this.set_path(undefined);
-					this.state = spacebase.STATE_IDLE;
-					this.job.started = false;
-					this.job = undefined;
+					// Stop working
+					this.stop_working();
 				}
 			}
 
@@ -140,9 +145,7 @@ spacebase.robot = function(x, y){
 			var building = spacebase.building(this.job.target, this.job.col, this.job.row);
 			spacebase.buildings.push(building);
 			spacebase.tile_map.push(building);
-			spacebase.jobs.remove(this.job);
-			this.state = spacebase.STATE_IDLE;
-			this.progress = 30;
+			this.job.die();
 		}
 	}
 
