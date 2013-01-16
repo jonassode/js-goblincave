@@ -50,7 +50,9 @@ spacebase.job = function(type, target, col, row){
 	}
 
 	object.die = function(){
-		this.worker.stop_working();
+		if ( this.worker ) {
+			this.worker.stop_working();
+		}
 		spacebase.jobs.remove(this);
 	}
 
